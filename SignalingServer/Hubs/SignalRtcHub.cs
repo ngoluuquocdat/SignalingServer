@@ -53,7 +53,8 @@ namespace SignalingServer.Hubs
 
         public async Task YourID()
         {
-            await Clients.Client(Context.ConnectionId).SendAsync("YourId", Context.ConnectionId);
+            await Clients.Client(Context.ConnectionId).SendAsync("YourID", Context.ConnectionId);
+            await Clients.Client(Context.ConnectionId).SendAsync("AllUsers", _users);
         }
 
         public async Task AllUsers()
@@ -72,6 +73,12 @@ namespace SignalingServer.Hubs
             // param fromUser/toUser is a connection Id
             // param signal is a json string 
             await Clients.Client(toUser).SendAsync("CallAccepted", signal);
+        }
+        public async Task CloseCall(string toUser)
+        {
+            // param fromUser/toUser is a connection Id
+            // param signal is a json string 
+            await Clients.Client(toUser).SendAsync("CloseCall", Context.ConnectionId);
         }
     }
 }
