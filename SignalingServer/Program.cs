@@ -15,7 +15,7 @@ builder.Services.AddSingleton<List<string>>(opts => new List<string>());
 // services cors
 builder.Services.AddCors(p => p.AddPolicy("MyCorsPolicy", builder =>
 {
-    builder.WithOrigins("http://localhost:3000").AllowAnyMethod().AllowAnyHeader().AllowCredentials();  
+    builder.WithOrigins("http://localhost:3000", "https://tourmaline-pastelito-ff7c52.netlify.app").AllowAnyMethod().AllowAnyHeader().AllowCredentials();  
 }));
 
 var app = builder.Build();

@@ -54,7 +54,7 @@ namespace SignalingServer.Hubs
         public async Task YourID()
         {
             await Clients.Client(Context.ConnectionId).SendAsync("YourID", Context.ConnectionId);
-            await Clients.Client(Context.ConnectionId).SendAsync("AllUsers", _users);
+            await Clients.All.SendAsync("AllUsers", _users);
         }
 
         public async Task AllUsers()
@@ -66,13 +66,15 @@ namespace SignalingServer.Hubs
         {
             // param fromUser/toUser is a connection Id
             // param signal is a json string 
-            await Clients.Client(toUser).SendAsync("Hey", fromUser, signal);
+            Console.WriteLine("Transfer signaling data: caller to callee");
+            await Clients.Client(toUser).SendAsync("IncomingCall", fromUser, signal);
         }
-        public async Task AcceptCall(string toUser, string signal)
+        public async Task AcceptCall(string caller, string signal)
         {
-            // param fromUser/toUser is a connection Id
+            // param caller is a connection Id of peer that made the call
             // param signal is a json string 
-            await Clients.Client(toUser).SendAsync("CallAccepted", signal);
+            Console.WriteLine("Transfer signaling data: callee to caller");
+            await Clients.Client(caller).SendAsync("CallAccepted", signal);
         }
         public async Task CloseCall(string toUser)
         {
