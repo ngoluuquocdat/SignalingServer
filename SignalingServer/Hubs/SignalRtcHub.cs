@@ -6,81 +6,68 @@ namespace SignalingServer.Hubs
 {
     public class SignalRtcHub : Hub
     {
-        private readonly List<string> _users;   // list of connection IDs
+        private readonly IDictionary<string, string> _users;   // dictionary of usernames (key) - connection IDs (value)
 
-        public SignalRtcHub(List<string> users)
+        public SignalRtcHub(IDictionary<string, string> users)
         {
             _users = users;
-        }
-
-        // invoked when new user comes
-        public async Task NewUser(string username)
-        {
-            var userInfo = new UserInfo() { UserName = username, ConnectionId = Context.ConnectionId };
-            await Clients.Others.SendAsync("NewUserArrived", JsonSerializer.Serialize(userInfo));
-        }
-
-        // existed users use this to inform their existence to the new user
-        // param newUser is the connectionId of new user
-        public async Task HelloUser(string userName, string newUser)
-        {
-            var userInfo = new UserInfo() { UserName = userName, ConnectionId = Context.ConnectionId };
-            await Clients.Client(newUser).SendAsync("UserSaidHello", JsonSerializer.Serialize(userInfo));
-        }
-
-        // used to send signal for WebRTC p2p system
-        // param user is the connectionId
-        public async Task SendSignal(string signal, string user)
-        {
-            await Clients.Client(user).SendAsync("SendSignal", Context.ConnectionId, signal);
-        }
-
-        public override async Task OnConnectedAsync()
-        {
-            if(!_users.Contains(Context.ConnectionId))
-            {
-                _users.Add(Context.ConnectionId);
-            }
-            await base.OnConnectedAsync();
         }
 
         // inform the group if one user disconnects
         public override Task OnDisconnectedAsync(Exception exception)
         {
-            _users.Remove(Context.ConnectionId);
+            var username = _users.FirstOrDefault(x => x.Value == Context.ConnectionId).Key;
+            if(!String.IsNullOrEmpty(username))
+            {
+                _users.Remove(username);
+            }
             return base.OnDisconnectedAsync(exception);
         }
 
-        public async Task YourID()
+        public async Task ConnectToSignalRTC(string username, bool isNewlyConnection)
         {
+            if(isNewlyConnection)
+            {
+                if (_users.ContainsKey(username))
+                {
+                    await Clients.Client(Context.ConnectionId).SendAsync("UsernameExisted");
+                    return;
+                }
+            }
+            // add to tracking dictionary
+            _users[username] = Context.ConnectionId;
+
+            // add new connection to group
+            await Groups.AddToGroupAsync(Context.ConnectionId, username);
+
             await Clients.Client(Context.ConnectionId).SendAsync("YourID", Context.ConnectionId);
-            await Clients.All.SendAsync("AllUsers", _users);
+            await Clients.All.SendAsync("AllUsers", _users.Keys);
         }
 
         public async Task AllUsers()
         {
-            await Clients.Client(Context.ConnectionId).SendAsync("AllUsers", _users);
+            await Clients.Caller.SendAsync("AllUsers", _users);
         }
 
         public async Task CallUser(string toUser, string signal, string fromUser)
         {
-            // param fromUser/toUser is a connection Id
+            // param fromUser/toUser is a username, or group name
             // param signal is a json string 
             Console.WriteLine("Transfer signaling data: caller to callee");
-            await Clients.Client(toUser).SendAsync("IncomingCall", fromUser, signal);
+            await Clients.Groups(toUser).SendAsync("IncomingCall", fromUser, signal);
         }
         public async Task AcceptCall(string caller, string signal)
         {
-            // param caller is a connection Id of peer that made the call
+            // param caller is a username/group name of peer that made the call
             // param signal is a json string 
             Console.WriteLine("Transfer signaling data: callee to caller");
-            await Clients.Client(caller).SendAsync("CallAccepted", signal);
+            await Clients.Groups(caller).SendAsync("CallAccepted", signal);
         }
         public async Task CloseCall(string toUser)
         {
-            // param fromUser/toUser is a connection Id
+            // param fromUser/toUser is a username/group name
             // param signal is a json string 
-            await Clients.Client(toUser).SendAsync("CloseCall", Context.ConnectionId);
+            await Clients.Groups(toUser).SendAsync("CloseCall", Context.ConnectionId);
         }
     }
 }

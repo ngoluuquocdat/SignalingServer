@@ -10,7 +10,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSignalR();
 
-builder.Services.AddSingleton<List<string>>(opts => new List<string>());
+builder.Services.AddSingleton<IDictionary<string, string>>(opts => new Dictionary<string, string>());
 
 // services cors
 builder.Services.AddCors(p => p.AddPolicy("MyCorsPolicy", builder =>
