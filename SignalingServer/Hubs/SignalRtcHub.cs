@@ -63,6 +63,13 @@ namespace SignalingServer.Hubs
             Console.WriteLine("Transfer signaling data: callee to caller");
             await Clients.Groups(caller).SendAsync("CallAccepted", signal);
         }
+        public async Task ShareScreen(string toUser)
+        {
+            // param caller is a username/group name of peer that made the call
+            // param signal is a json string 
+            Console.WriteLine("Transfer signaling data: callee to caller");
+            await Clients.Groups(toUser).SendAsync("PartnerSharedScreen");
+        }
         public async Task CloseCall(string toUser)
         {
             // param fromUser/toUser is a username/group name
