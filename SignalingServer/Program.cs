@@ -35,6 +35,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.MapHub<SignalRtcHub>("/signalrtc");
+//app.MapHub<SignalRtcHub>("/signalrtc");
+app.MapHub<RtcSignalingHub>("/signalrtc");
 
 app.Run();
